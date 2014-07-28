@@ -11,11 +11,17 @@
 
 (require 'cl)       ; common lisp goodies, loop
 
+;; env PATH
+(defun set-exec-path-from-shell-PATH ()
+  (let ((path-from-shell (shell-command-to-string "$SHELL -i -c 'echo $PATH'")))
+    (setenv "PATH" path-from-shell)
+    (setq exec-path (split-string path-from-shell path-separator))))
+
 (add-to-list 'load-path "~/.emacs.d/el-get/el-get")
 
 (unless (require 'el-get nil t)
   (url-retrieve
-   "https://github.com/dimitri/el-get/blob/62f217785fcdf36b304ae84d3951ac0d2e53998e/el-get-install.el"
+   "https://github.com/dimitri/el-get/raw/62f217785fcdf36b304ae84d3951ac0d2e53998e/el-get-install.el"
    (lambda (s)
      (goto-char (point-max))
      (eval-print-last-sexp))))
@@ -27,12 +33,12 @@
 (setq
  el-get-sources
  '(
-   (:name        ac-nrepl
-                 :description "Nrepl completion source for Emacs auto-complete package"
-                 :type        github
-                 :pkgname     "clojure-emacs/ac-nrepl"
-                 :depends     (auto-complete cider)
-                 :features    ac-nrepl)
+   (:name ac-nrepl
+          :description "Nrepl completion source for Emacs auto-complete package"
+          :type github
+          :pkgname "clojure-emacs/ac-nrepl"
+          :depends (auto-complete cider)
+          :features ac-nrepl)
    (:name auto-complete
           :website "https://github.com/auto-complete/auto-complete"
           :description "The most intelligent auto-completion extension."
@@ -65,7 +71,6 @@
           :type elpa
           :description "Properly prefixed CL functions and macros"
           :url "http://elpa.gnu.org/packages/cl-lib.html")
-
    (:name clj-refactor
           :description "A collection of simple clojure refactoring functions"
           :type github
@@ -87,7 +92,6 @@
           :post-init (progn
                        (color-theme-initialize)
                        (setq color-theme-is-global t)))
-
    (:name color-theme-solarized
           :description "Emacs highlighting using Ethan Schoonover's Solarized color scheme"
           :type github
@@ -115,7 +119,6 @@
                        "color-theme: tomorrow-night-blue" t)
                      (autoload 'color-theme-tomorrow-night-bright "GNU Emacs/color-theme-tomorrow"
                        "color-theme: tomorrow-night-bright" t)))
-
    (:name dash
           :description "A modern list api for Emacs. No 'cl required."
           :type github
@@ -162,6 +165,10 @@
           :description "GNU Emacs modes for various Git-related files"
           :type github
           :pkgname "magit/git-modes")
+   (:name goto-last-change ; move pointer back to last change           
+          :after (progn                                                 
+                   ;; when using AZERTY keyboard, consider C-x C-_      
+                   (global-set-key (kbd "C-x C-l") 'goto-last-change)))
    (:name highlight-parentheses
           :description "Highlight the matching parentheses surrounding point."
           :type github
@@ -227,6 +234,11 @@
           :website "http://www.dr-qubit.org/emacs.php"
           :type git
           :url "http://www.dr-qubit.org/git/undo-tree.git/")
+   (:name volatile-highlights
+          :description "Minor mode for visual feedback on some operations in Emacs"
+          :type github
+          :pkgname "k-talo/volatile-highlights.el"
+          :features volatile-highlights)
    (:name wgrep
           :description "Writable grep buffer and apply the changes to files"
           :type github
@@ -243,28 +255,49 @@
           ;; see https://github.com/dimitri/el-get/issues/1511
           :submodule nil
           :build (("git" "submodule" "update" "--init" "--" "snippets")))
+))
 
-   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-   ;; (:name goto-last-change ; move pointer back to last change           ;;
-   ;;        :after (progn                                                 ;;
-   ;;                 ;; when using AZERTY keyboard, consider C-x C-_      ;;
-   ;;                 (global-set-key (kbd "C-x C-l") 'goto-last-change))) ;;
-   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-   ))
 
 ;; now set our own packages
 (setq
  my:el-get-packages
- '(el-get              ; el-get is self-hosting
-   escreen             ; screen for emacs, C-\ C-h
-   php-mode-improved   ; if you're into php...
-   switch-window       ; takes over C-x o
-   auto-complete       ; complete as you type with overlays
-   yasnippet           ; powerful snippet mode
-   zencoding-mode      ; http://www.emacswiki.org/emacs/ZenCoding
-   color-theme         ; nice looking emacs
-   color-theme-tango)) ; check out color-theme-solarized
+ '(ac-nrepl
+   auto-complete
+   auto-complete-yasnippet
+   auto-complete-emacs-lisp
+   cider
+   cl-lib
+   clj-refactor
+   clojure-mode
+   color-theme
+   color-theme-solarized
+   color-theme-tomorrow
+   dash
+   el-get
+   erc
+   exec-path-from-shell
+   expand-region
+   fuzzy
+   git-gutter
+   git-modes
+   goto-last-change
+   highlight-parentheses
+   ido-vertical-mode
+   ido-ubiquitous
+   magit
+   multiple-cursors
+   paredit
+   pkg-info
+   popup
+   projectile
+   s
+   smex
+   undo-tree
+   wgrep
+   yasnippet
+   volatile-highlights
+   ))
 
 ;;
 ;; Some recipes require extra tools to be installed
@@ -275,14 +308,8 @@
   (add-to-list 'my:el-get-packages 'emacs-goodies-el)) ; the debian addons for emacs
 
 (when (ignore-errors (el-get-executable-find "svn"))
-  (loop for p in '(psvn       ; M-x svn-status
-                   )
+  (loop for p in '(psvn)
         do (add-to-list 'my:el-get-packages p)))
-
-(setq my:el-get-packages
-      (append
-       my:el-get-packages
-       (loop for src in el-get-sources collect (el-get-source-name src))))
 
 ;; install new packages and init already installed packages
 (el-get 'sync my:el-get-packages)
@@ -369,20 +396,9 @@
 ;; manager or do M-x kill-emacs.  Don't need a nice shortcut for a once a
 ;; week (or day) action.
 (global-set-key (kbd "C-x C-b") 'ido-switch-buffer)
-(global-set-key (kbd "C-x C-c") 'ido-switch-buffer)
 (global-set-key (kbd "C-x B") 'ibuffer)
 
 ;; have vertical ido completion lists
 (setq ido-decorations
       '("\n-> " "" "\n   " "\n   ..." "[" "]"
         " [No match]" " [Matched]" " [Not readable]" " [Too big]" " [Confirm]"))
-
-;; C-x C-j opens dired with the cursor right on the file you're editing
-(require 'dired-x)
-
-;; full screen
-(defun fullscreen ()
-  (interactive)
-  (set-frame-parameter nil 'fullscreen
-                       (if (frame-parameter nil 'fullscreen) nil 'fullboth)))
-(global-set-key [f11] 'fullscreen)
