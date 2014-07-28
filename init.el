@@ -342,8 +342,9 @@
 ;; under mac, have Command as Meta and keep Option for localized input
 (when (string-match "apple-darwin" system-configuration)
   (setq mac-allow-anti-aliasing t)
-  (setq mac-command-modifier 'meta)
-  (setq mac-option-modifier 'none))
+  (setq mac-command-modifier 'super)
+  (setq mac-option-modifier 'meta))
+
 
 ;; Use the clipboard, pretty please, so that copy/paste "works"
 (setq x-select-enable-clipboard t)
@@ -373,13 +374,13 @@
 ;;
 ;; The default way to toggle between them is C-c C-j and C-c C-k, let's
 ;; better use just one key to do the same.
-(require 'term)
-(define-key term-raw-map  (kbd "C-'") 'term-line-mode)
-(define-key term-mode-map (kbd "C-'") 'term-char-mode)
+;; (require 'term)
+;; (define-key term-raw-map  (kbd "C-'") 'term-line-mode)
+;; (define-key term-mode-map (kbd "C-'") 'term-char-mode)
 
 ;; Have C-y act as usual in term-mode, to avoid C-' C-y C-'
 ;; Well the real default would be C-c C-j C-y C-c C-k.
-(define-key term-raw-map  (kbd "C-y") 'term-paste)
+;; (define-key term-raw-map  (kbd "C-y") 'term-paste)
 
 ;; use ido for minibuffer completion
 (require 'ido)
